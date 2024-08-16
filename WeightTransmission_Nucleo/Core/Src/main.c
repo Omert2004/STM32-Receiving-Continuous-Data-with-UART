@@ -31,7 +31,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define RX_BUFFER_SIZE 10
+#define RX_BUFFER_SIZE 18
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -64,7 +64,8 @@ void LED_Off(void);
 void UserButton_Init(void);
 void WaitForUserButtonPress(void);
 void WaitAndCheckEndOfTransfer(void);
-uint8_t CheckForFullness();
+void ResetFlags(void);
+void CheckForFullness(void);
 
 
 /* USER CODE END PFP */
@@ -103,7 +104,6 @@ int main(void)
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SYSCFG);
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 
-
 	LL_SYSCFG_DisableDBATT(LL_SYSCFG_UCPD1_STROBE | LL_SYSCFG_UCPD2_STROBE);
 
   /* USER CODE END Init */
@@ -134,6 +134,19 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+
+	  ResetFlags();
+	  	  // Start the recursion
+	  	 	/* Configure the DMA functional parameters for reception */
+		LL_DMA_ConfigAddresses(DMA1, LL_DMA_CHANNEL_2,
+							   LL_USART_DMA_GetRegAddr(USART2, LL_USART_DMA_REG_DATA_RECEIVE),
+							   (uint32_t)RxRawData,
+							   LL_DMA_GetDataTransferDirection(DMA1, LL_DMA_CHANNEL_2));
+		LL_DMA_SetDataLength(DMA1, LL_DMA_CHANNEL_2, ubNbDataToReceive);
+
+		StartTransfer();
+
+		WaitAndCheckEndOfTransfer();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -418,6 +431,7 @@ void StartTransfer(void)
   LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_2);
 
   /* Enable DMA Channel Tx */
+
 }
 
 
@@ -428,6 +442,7 @@ void WaitAndCheckEndOfTransfer(void){
 
 	LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_2);
 
+	strcpy((char*)RxBuffer,(char*)RxRawData); // copy it to the other buffer
 //	if (CheckFullness(RxRawData))
 //	  {
 //	    /* Processing Error */
@@ -440,7 +455,7 @@ void WaitAndCheckEndOfTransfer(void){
 //	  }
 }
 
-uint8_t CheckForFullness()
+void CheckForFullness(void)
 {
 	//CheckWhetherthe array is full or received
 	strcpy((char*)RxBuffer,(char*)RxRawData);
@@ -459,6 +474,11 @@ void UserButton_Callback(void)
   ubButtonPress = 1;
 }
 
+void ResetFlags(void){
+
+	/* Buffer used for reception */
+	ubReceptionComplete = 0;
+}
 /* USER CODE END 4 */
 
 /**
