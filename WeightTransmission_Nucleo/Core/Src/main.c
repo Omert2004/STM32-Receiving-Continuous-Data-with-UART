@@ -48,7 +48,7 @@ __IO uint8_t ubSend = 0;
 
 uint8_t RxRawData[RX_RAWDATA_SIZE];
 uint8_t RxBuffer[RX_BUFFER_SIZE];
-uint8_t ubNbDataToReceive = sizeof(RxBuffer) - 1;
+uint16_t ubNbDataToReceive = sizeof(RxRawData) - 1;
 
 uint8_t IndexRxRawData = 0;
 
@@ -309,12 +309,14 @@ static void MX_USART2_UART_Init(void)
   LL_USART_ConfigAsyncMode(USART2);
 
   /* USER CODE BEGIN WKUPType USART2 */
-  LL_USART_SetRxTimeout(USART2, 960);
   LL_USART_EnableRxTimeout(USART2);
+  LL_USART_SetRxTimeout(USART2, 960);
+
   LL_USART_ClearFlag_RTO(USART2);
   LL_USART_EnableIT_RTO(USART2);
   /* USER CODE END WKUPType USART2 */
 
+  LL_USART_Enable(USART2);
 
   /* Polling USART2 initialisation */
   while((!(LL_USART_IsActiveFlag_TEACK(USART2))) || (!(LL_USART_IsActiveFlag_REACK(USART2))))
@@ -488,6 +490,7 @@ void ResetFlags(void){
 
 	/* Buffer used for reception */
 	ubReceptionComplete = 0;
+
 }
 /* USER CODE END 4 */
 
@@ -517,6 +520,7 @@ void USART2_IRQHandler(void)
 	     memcpy(RxBuffer, RxRawData,sizeof(RxBuffer)); // Keep the input with RxBuffer
 	     IndexRxRawData= 0; // Reset the RawData index
 	     memset(RxRawData, 0, sizeof(RxRawData)); // Clear the RxRawData to get new input starting from index 0.
+	 	ubReceptionComplete = 1; //Calls the interrupt then restarts DMA.
 	    }
 
 //	if (LL_USART_IsActiveFlag_RXNE(USART2))
