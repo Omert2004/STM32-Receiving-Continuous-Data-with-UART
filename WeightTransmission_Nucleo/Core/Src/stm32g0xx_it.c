@@ -22,6 +22,7 @@
 #include "stm32g0xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <string.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -182,15 +183,22 @@ void DMA1_Channel2_3_IRQHandler(void)
 /**
   * @brief This function handles USART2 Interrupt.
   */
-void USART2_IRQHandler(void)
-{
-  /* USER CODE BEGIN USART2_IRQn 0 */
-
-  /* USER CODE END USART2_IRQn 0 */
-  /* USER CODE BEGIN USART2_IRQn 1 */
-
-  /* USER CODE END USART2_IRQn 1 */
-}
+//void USART2_IRQHandler(void)
+//{
+//  /* USER CODE BEGIN USART2_IRQn 0 */
+//	if (LL_USART_IsActiveFlag_RTO(USART2))
+//	    {
+//	        // Clear the Rx Timeout flag
+//	        LL_USART_ClearFlag_RTO(USART2);
+//
+//	     memcpy(RxBuffer, &RxRawData,0);
+//	     memset(RxRawData, 0, sizeof(RxRawData));
+//	    }
+//  /* USER CODE END USART2_IRQn 0 */
+//  /* USER CODE BEGIN USART2_IRQn 1 */
+//
+//  /* USER CODE END USART2_IRQn 1 */
+//}
 
 /* USER CODE BEGIN 1 */
 void USER_BUTTON_IRQHANDLER(void)

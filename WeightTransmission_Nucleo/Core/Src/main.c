@@ -47,8 +47,10 @@ __IO uint8_t ubButtonPress = 0;
 __IO uint8_t ubSend = 0;
 
 uint8_t RxRawData[RX_RAWDATA_SIZE];
-uint8_t ubNbDataToReceive = sizeof(RxRawData) - 1;
 uint8_t RxBuffer[RX_BUFFER_SIZE];
+uint8_t ubNbDataToReceive = sizeof(RxBuffer) - 1;
+
+uint8_t IndexRxRawData = 0;
 
 __IO uint8_t ubReceptionComplete = 0;
 /* USER CODE END PV */
@@ -131,18 +133,18 @@ int main(void)
   while (1)
   {
 
-	  ResetFlags();
+	 ResetFlags();
 	  	  // Start the recursion
 	  	 	/* Configure the DMA functional parameters for reception */
-		LL_DMA_ConfigAddresses(DMA1, LL_DMA_CHANNEL_2,
+	LL_DMA_ConfigAddresses(DMA1, LL_DMA_CHANNEL_2,
 							   LL_USART_DMA_GetRegAddr(USART2, LL_USART_DMA_REG_DATA_RECEIVE),
 							   (uint32_t)RxRawData,
 							   LL_DMA_GetDataTransferDirection(DMA1, LL_DMA_CHANNEL_2));
-		LL_DMA_SetDataLength(DMA1, LL_DMA_CHANNEL_2, ubNbDataToReceive);
+	LL_DMA_SetDataLength(DMA1, LL_DMA_CHANNEL_2, ubNbDataToReceive);
 
-		StartTransfer();
+	StartTransfer();
 
-		WaitAndCheckEndOfTransfer();
+	WaitAndCheckEndOfTransfer();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -307,23 +309,18 @@ static void MX_USART2_UART_Init(void)
   LL_USART_ConfigAsyncMode(USART2);
 
   /* USER CODE BEGIN WKUPType USART2 */
-
+  LL_USART_SetRxTimeout(USART2, 960);
+  LL_USART_EnableRxTimeout(USART2);
+  LL_USART_ClearFlag_RTO(USART2);
+  LL_USART_EnableIT_RTO(USART2);
   /* USER CODE END WKUPType USART2 */
 
-  LL_USART_Enable(USART2);
 
   /* Polling USART2 initialisation */
   while((!(LL_USART_IsActiveFlag_TEACK(USART2))) || (!(LL_USART_IsActiveFlag_REACK(USART2))))
   {
   }
   /* USER CODE BEGIN USART2_Init 2 */
-
-  /* Polling USART initialisation */
-  while ((!(LL_USART_IsActiveFlag_TEACK(USART2))) || (!(LL_USART_IsActiveFlag_REACK(USART2))))
-  {
-  }
-  /* USER CODE END USART2_Init 2 */
-
 
 }
 
@@ -508,6 +505,26 @@ void USART_TransferError_Callback(void)
 
   /* Set LED4 to Blinking mode to indicate error occurs */
   LED_Blinking(500);
+}
+void USART2_IRQHandler(void)
+{
+  /* USER CODE BEGIN USART2_IRQn 0 */
+	if (LL_USART_IsActiveFlag_RTO(USART2)) //Cheg if Rx Timeou(RTO) flag is set.
+	    {
+	        // Clear the Rx Timeout flag
+	        LL_USART_ClearFlag_RTO(USART2);
+
+	     memcpy(RxBuffer, RxRawData,sizeof(RxBuffer)); // Keep the input with RxBuffer
+	     IndexRxRawData= 0; // Reset the RawData index
+	     memset(RxRawData, 0, sizeof(RxRawData)); // Clear the RxRawData to get new input starting from index 0.
+	    }
+
+//	if (LL_USART_IsActiveFlag_RXNE(USART2))
+//	{
+//		RxRawData[IndexRxRawData++] == LL_USART_ReceiveData8(USART2); //Store the received data in RxRawData
+//
+//
+//	}
 }
 
 void Error_Handler(void)
