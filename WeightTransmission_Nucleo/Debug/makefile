@@ -60,8 +60,8 @@ all: main-build
 main-build: WeightTransmission_Nucleo.elf secondary-outputs
 
 # Tool invocations
-WeightTransmission_Nucleo.elf WeightTransmission_Nucleo.map: $(OBJS) $(USER_OBJS) C:\Users\Oguzm\OneDrive\Belgeler\STM32_WorkSpace\WeightTransmission_Nucleo\STM32G071RBTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "WeightTransmission_Nucleo.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m0plus -T"C:\Users\Oguzm\OneDrive\Belgeler\STM32_WorkSpace\WeightTransmission_Nucleo\STM32G071RBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="WeightTransmission_Nucleo.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+WeightTransmission_Nucleo.elf WeightTransmission_Nucleo.map: $(OBJS) $(USER_OBJS) C:\Users\Oguzm\OneDrive\Belgeler\STM32_GitWorkspace\STM32_UART\WeightTransmission_Nucleo\STM32G071RBTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "WeightTransmission_Nucleo.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m0plus -T"C:\Users\Oguzm\OneDrive\Belgeler\STM32_GitWorkspace\STM32_UART\WeightTransmission_Nucleo\STM32G071RBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="WeightTransmission_Nucleo.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

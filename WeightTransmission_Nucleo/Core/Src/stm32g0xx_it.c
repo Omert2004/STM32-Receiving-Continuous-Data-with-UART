@@ -161,16 +161,17 @@ void DMA1_Channel2_3_IRQHandler(void)
 {
   /* USER CODE BEGIN DMA1_Channel2_3_IRQn 0 */
 	if (LL_DMA_IsActiveFlag_TC2(DMA1))
-	  {
-	    LL_DMA_ClearFlag_TC2(DMA1);
-	    /* Call function Reception complete Callback */
-	    DMA1_ReceiveComplete_Callback();
-	  }
-	  else if (LL_DMA_IsActiveFlag_TE2(DMA1))
-	  {
-	    /* Call Error function */
-	    USART_TransferError_Callback();
-	  }
+  {
+    LL_DMA_ClearFlag_TC2(DMA1);
+    /* Call function Reception complete Callback */
+    DMA1_ReceiveComplete_Callback();
+  }
+  else if (LL_DMA_IsActiveFlag_TE2(DMA1))
+  {
+    /* Call Error function */
+    USART_TransferError_Callback();
+  }
+
   /* USER CODE END DMA1_Channel2_3_IRQn 0 */
 
   /* USER CODE BEGIN DMA1_Channel2_3_IRQn 1 */
