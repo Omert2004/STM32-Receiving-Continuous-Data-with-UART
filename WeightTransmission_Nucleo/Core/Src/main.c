@@ -54,7 +54,8 @@ uint8_t ProcessedData[PROCESSED_DATA_SIZE];
 uint8_t IndexRxRawData = 0;
 
 __IO uint8_t ubReceptionComplete = 0;
-
+uint8_t DataUsed=0;
+int a;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -72,6 +73,7 @@ void WaitForUserButtonPress(void);
 void WaitAndCheckEndOfTransfer(void);
 void ResetFlags(void);
 void Task1(uint8_t *SmallBuffer);
+void LightTask(uint8_t *ProcessedData);
 
 
 
@@ -126,9 +128,9 @@ int main(void)
   /*Wait for User push-button to start receive data*/
   WaitForUserButtonPress();
 
-  StartTransfer();
+  StartTransfer(); // Enable DMA and its RX Channel
 
-  WaitAndCheckEndOfTransfer();
+  WaitAndCheckEndOfTransfer(); // When data is received, close the channel
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -138,7 +140,7 @@ int main(void)
 
 	 ResetFlags();
 	  	  // Start the recursion
-	  	 	/* Configure the DMA functional parameters for reception */
+	/* Configure the DMA functional parameters for reception */
 	LL_DMA_ConfigAddresses(DMA1, LL_DMA_CHANNEL_2,
 							   LL_USART_DMA_GetRegAddr(USART2, LL_USART_DMA_REG_DATA_RECEIVE),
 							   (uint32_t)RxRawData,
@@ -455,7 +457,7 @@ void StartTransfer(void)
 void WaitAndCheckEndOfTransfer(void){
 	while(ubReceptionComplete != 1)
 	{
-		Task1(RxBuffer);
+		//Task1(RxBuffer);
 	}
 
 	LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_2);
@@ -472,9 +474,6 @@ void WaitAndCheckEndOfTransfer(void){
 //	    LED_On();
 //	  }
 }
-
-
-
 
 void DMA1_ReceiveComplete_Callback(void)
 {
@@ -517,11 +516,15 @@ void USART2_IRQHandler(void)
 	    {
 	        // Clear the Rx Timeout flag
 	        LL_USART_ClearFlag_RTO(USART2);
-
-	     memcpy(RxBuffer, RxRawData,sizeof(RxBuffer)); // Keep the input with RxBuffer
-	     IndexRxRawData= 0; // Reset the RawData index
-	     memset(RxRawData, 0, sizeof(RxRawData)); // Clear the RxRawData to get new input starting from index 0.
-	 	ubReceptionComplete = 1; //Calls the interrupt then restarts DMA.
+//	     if ( DataUsed== 1){
+//	    	 memset(RxBuffer,0,sizeof(RxBuffer));
+//	    	 DataUsed=0;
+//	     }
+	    	 memcpy(RxBuffer, RxRawData,sizeof(RxBuffer)); // Keep the input with RxBuffer
+			 IndexRxRawData= 0; // Reset the RawData index
+			 memset(RxRawData, 0, sizeof(RxRawData)); // Clear the RxRawData to get new input starting from index 0.
+			 ubReceptionComplete = 1;
+	      //Calls the interrupt then restarts DMA.
 	    }
 
 //	if (LL_USART_IsActiveFlag_RXNE(USART2))
@@ -532,15 +535,30 @@ void USART2_IRQHandler(void)
 //	}
 }
 
-void Task1(uint8_t *SmallBuffer){
-	memset(ProcessedData,0, sizeof(ProcessedData));
+void Task1(uint8_t *SmallBuffer){ //
 
-	for(int i=0; i<4;i++){
+	for(int i=0; i<4;i++){ // Store the processed Data from RxBuffer
 		ProcessedData[i]= SmallBuffer[i+6];
+	}
+	LightTask(ProcessedData);
+	memset(ProcessedData,0, sizeof(ProcessedData)); // REset the ProcessedDAta
+	DataUsed=1; //Raise Flag when the Task1 is done.
+}
+void LightTask(uint8_t *ProcessedData){
+	int i, k = 0;
+	int ProcessedData_Size= sizeof(ProcessedData);
+	for (i = 0; i < ProcessedData_Size; i++){ // Convert the processed data to whole integer number
+		k = 10 * k + (ProcessedData[i] - '0'); // Turn the character into integer by substracting '0'
+	}
+	a=k;
+	if ( k > 1330 && k < 1340){ // Blink LED, if the proccessed integer is at between desired borders
+		LED_Blinking(500);
+	}
+	else{
+		LED_Off();
 	}
 
 }
-
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
