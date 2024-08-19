@@ -32,7 +32,8 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define RX_RAWDATA_SIZE 300
-#define RX_BUFFER_SIZE 15
+#define RX_BUFFER_SIZE 16
+#define	PROCESSED_DATA_SIZE 4
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -49,10 +50,11 @@ __IO uint8_t ubSend = 0;
 uint8_t RxRawData[RX_RAWDATA_SIZE];
 uint8_t RxBuffer[RX_BUFFER_SIZE];
 uint16_t ubNbDataToReceive = sizeof(RxRawData) - 1;
-
+uint8_t ProcessedData[PROCESSED_DATA_SIZE];
 uint8_t IndexRxRawData = 0;
 
 __IO uint8_t ubReceptionComplete = 0;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -69,7 +71,8 @@ void UserButton_Init(void);
 void WaitForUserButtonPress(void);
 void WaitAndCheckEndOfTransfer(void);
 void ResetFlags(void);
-void CheckForFullness(void);
+void Task1(uint8_t *SmallBuffer);
+
 
 
 /* USER CODE END PFP */
@@ -145,6 +148,8 @@ int main(void)
 	StartTransfer();
 
 	WaitAndCheckEndOfTransfer();
+
+	Task1(RxBuffer);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -450,6 +455,7 @@ void StartTransfer(void)
 void WaitAndCheckEndOfTransfer(void){
 	while(ubReceptionComplete != 1)
 	{
+		Task1(RxBuffer);
 	}
 
 	LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_2);
@@ -467,11 +473,6 @@ void WaitAndCheckEndOfTransfer(void){
 //	  }
 }
 
-void CheckForFullness(void)
-{
-	//CheckWhetherthe array is full or received
-	strcpy((char*)RxBuffer,(char*)RxRawData);
-}
 
 
 
@@ -529,6 +530,15 @@ void USART2_IRQHandler(void)
 //
 //
 //	}
+}
+
+void Task1(uint8_t *SmallBuffer){
+	memset(ProcessedData,0, sizeof(ProcessedData));
+
+	for(int i=0; i<4;i++){
+		ProcessedData[i]= SmallBuffer[i+6];
+	}
+
 }
 
 void Error_Handler(void)
