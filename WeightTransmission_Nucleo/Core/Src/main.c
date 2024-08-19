@@ -139,7 +139,7 @@ int main(void)
   {
 
 	 ResetFlags();
-	  	  // Start the recursion
+	 // Start the recursion
 	/* Configure the DMA functional parameters for reception */
 	LL_DMA_ConfigAddresses(DMA1, LL_DMA_CHANNEL_2,
 							   LL_USART_DMA_GetRegAddr(USART2, LL_USART_DMA_REG_DATA_RECEIVE),
@@ -151,7 +151,7 @@ int main(void)
 
 	WaitAndCheckEndOfTransfer();
 
-	Task1(RxBuffer);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -457,7 +457,7 @@ void StartTransfer(void)
 void WaitAndCheckEndOfTransfer(void){
 	while(ubReceptionComplete != 1)
 	{
-		//Task1(RxBuffer);
+		Task1(RxBuffer);
 	}
 
 	LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_2);
@@ -512,7 +512,7 @@ void USART_TransferError_Callback(void)
 void USART2_IRQHandler(void)
 {
   /* USER CODE BEGIN USART2_IRQn 0 */
-	if (LL_USART_IsActiveFlag_RTO(USART2)) //Cheg if Rx Timeou(RTO) flag is set.
+	if (LL_USART_IsActiveFlag_RTO(USART2)) //Check if Rx Timeou(RTO) flag is set.
 	    {
 	        // Clear the Rx Timeout flag
 	        LL_USART_ClearFlag_RTO(USART2);
@@ -552,7 +552,7 @@ void LightTask(uint8_t *ProcessedData){
 	}
 	a=k;
 	if ( k > 1330 && k < 1340){ // Blink LED, if the proccessed integer is at between desired borders
-		LED_Blinking(500);
+		LED_On();
 	}
 	else{
 		LED_Off();
