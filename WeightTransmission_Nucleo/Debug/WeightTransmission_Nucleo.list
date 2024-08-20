@@ -39,13 +39,13 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  17 .debug_line   000047b7  00000000  00000000  0001b30a  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_str    00060ecc  00000000  00000000  0001fac1  2**0
+ 18 .debug_str    00060ed0  00000000  00000000  0001fac1  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .comment      00000043  00000000  00000000  0008098d  2**0
+ 19 .comment      00000043  00000000  00000000  00080991  2**0
                   CONTENTS, READONLY
- 20 .debug_frame  00001794  00000000  00000000  000809d0  2**2
+ 20 .debug_frame  00001794  00000000  00000000  000809d4  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 21 .debug_line_str 00000087  00000000  00000000  00082164  2**0
+ 21 .debug_line_str 00000087  00000000  00000000  00082168  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -2393,8 +2393,8 @@ int main(void)
   StartTransfer(); // Enable DMA and its RX Channel
  8000df4:	f000 fa50 	bl	8001298 <StartTransfer>
 
-  WaitAndCheckEndOfTransfer(); // When data is received, close the channel
- 8000df8:	f000 fa60 	bl	80012bc <WaitAndCheckEndOfTransfer>
+  ExecuteTasksAndDisableChannel(); // When data is received, execute the tasks and close the channel
+ 8000df8:	f000 fa60 	bl	80012bc <ExecuteTasksAndDisableChannel>
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
@@ -2437,8 +2437,8 @@ int main(void)
 	StartTransfer();
  8000e38:	f000 fa2e 	bl	8001298 <StartTransfer>
 
-	WaitAndCheckEndOfTransfer();
- 8000e3c:	f000 fa3e 	bl	80012bc <WaitAndCheckEndOfTransfer>
+	ExecuteTasksAndDisableChannel();
+ 8000e3c:	f000 fa3e 	bl	80012bc <ExecuteTasksAndDisableChannel>
 	 ResetFlags();
  8000e40:	46c0      	nop			@ (mov r8, r8)
  8000e42:	e7db      	b.n	8000dfc <main+0x40>
@@ -2851,7 +2851,7 @@ static void MX_USART2_UART_Init(void)
  80010ac:	187b      	adds	r3, r7, r1
  80010ae:	2200      	movs	r2, #0
  80010b0:	61da      	str	r2, [r3, #28]
-  LL_USART_Init(USART2, &USART_InitStruct);
+  LL_USART_Init(USART2,&USART_InitStruct);
  80010b2:	187b      	adds	r3, r7, r1
  80010b4:	4a20      	ldr	r2, [pc, #128]	@ (8001138 <MX_USART2_UART_Init+0x270>)
  80010b6:	0019      	movs	r1, r3
@@ -3208,8 +3208,6 @@ void StartTransfer(void)
  800129e:	0018      	movs	r0, r3
  80012a0:	f7ff fcf2 	bl	8000c88 <LL_USART_EnableDMAReq_RX>
 
-  /* Enable DMA TX Interrupt */
-
   /* Enable DMA Channel Rx */
   LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_2);
  80012a4:	4b04      	ldr	r3, [pc, #16]	@ (80012b8 <StartTransfer+0x20>)
@@ -3226,43 +3224,39 @@ void StartTransfer(void)
  80012b4:	40004400 	.word	0x40004400
  80012b8:	40020000 	.word	0x40020000
 
-080012bc <WaitAndCheckEndOfTransfer>:
+080012bc <ExecuteTasksAndDisableChannel>:
 
 
-void WaitAndCheckEndOfTransfer(void){
+void ExecuteTasksAndDisableChannel(void){
  80012bc:	b580      	push	{r7, lr}
  80012be:	af00      	add	r7, sp, #0
 	while(ubReceptionComplete != 1)
- 80012c0:	e003      	b.n	80012ca <WaitAndCheckEndOfTransfer+0xe>
+ 80012c0:	46c0      	nop			@ (mov r8, r8)
+ 80012c2:	4b08      	ldr	r3, [pc, #32]	@ (80012e4 <ExecuteTasksAndDisableChannel+0x28>)
+ 80012c4:	781b      	ldrb	r3, [r3, #0]
+ 80012c6:	b2db      	uxtb	r3, r3
+ 80012c8:	2b01      	cmp	r3, #1
+ 80012ca:	d1fa      	bne.n	80012c2 <ExecuteTasksAndDisableChannel+0x6>
 	{
-		Task1(RxBuffer);
- 80012c2:	4b08      	ldr	r3, [pc, #32]	@ (80012e4 <WaitAndCheckEndOfTransfer+0x28>)
- 80012c4:	0018      	movs	r0, r3
- 80012c6:	f000 f873 	bl	80013b0 <Task1>
-	while(ubReceptionComplete != 1)
- 80012ca:	4b07      	ldr	r3, [pc, #28]	@ (80012e8 <WaitAndCheckEndOfTransfer+0x2c>)
- 80012cc:	781b      	ldrb	r3, [r3, #0]
- 80012ce:	b2db      	uxtb	r3, r3
- 80012d0:	2b01      	cmp	r3, #1
- 80012d2:	d1f6      	bne.n	80012c2 <WaitAndCheckEndOfTransfer+0x6>
+		//Task1(RxBuffer);
 	}
 
+	Task1(RxBuffer);
+ 80012cc:	4b06      	ldr	r3, [pc, #24]	@ (80012e8 <ExecuteTasksAndDisableChannel+0x2c>)
+ 80012ce:	0018      	movs	r0, r3
+ 80012d0:	f000 f86e 	bl	80013b0 <Task1>
 	LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_2);
- 80012d4:	4b05      	ldr	r3, [pc, #20]	@ (80012ec <WaitAndCheckEndOfTransfer+0x30>)
+ 80012d4:	4b05      	ldr	r3, [pc, #20]	@ (80012ec <ExecuteTasksAndDisableChannel+0x30>)
  80012d6:	2101      	movs	r1, #1
  80012d8:	0018      	movs	r0, r3
  80012da:	f7ff f847 	bl	800036c <LL_DMA_DisableChannel>
-//	  else
-//	  {
-//	    /* Turn On Led if data are well received */
-//	    LED_On();
-//	  }
+
 }
  80012de:	46c0      	nop			@ (mov r8, r8)
  80012e0:	46bd      	mov	sp, r7
  80012e2:	bd80      	pop	{r7, pc}
- 80012e4:	20000154 	.word	0x20000154
- 80012e8:	20000169 	.word	0x20000169
+ 80012e4:	20000169 	.word	0x20000169
+ 80012e8:	20000154 	.word	0x20000154
  80012ec:	40020000 	.word	0x40020000
 
 080012f0 <DMA1_ReceiveComplete_Callback>:

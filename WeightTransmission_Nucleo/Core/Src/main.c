@@ -70,7 +70,7 @@ void LED_Blinking(uint32_t Period);
 void LED_Off(void);
 void UserButton_Init(void);
 void WaitForUserButtonPress(void);
-void WaitAndCheckEndOfTransfer(void);
+void ExecuteTasksAndDisableChannel(void);
 void ResetFlags(void);
 void Task1(uint8_t *SmallBuffer);
 void LightTask(uint8_t *ProcessedData);
@@ -130,7 +130,7 @@ int main(void)
 
   StartTransfer(); // Enable DMA and its RX Channel
 
-  WaitAndCheckEndOfTransfer(); // When data is received, close the channel
+  ExecuteTasksAndDisableChannel(); // When data is received, execute the tasks and close the channel
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -149,7 +149,7 @@ int main(void)
 
 	StartTransfer();
 
-	WaitAndCheckEndOfTransfer();
+	ExecuteTasksAndDisableChannel();
 
 
     /* USER CODE END WHILE */
@@ -309,7 +309,7 @@ static void MX_USART2_UART_Init(void)
   USART_InitStruct.TransferDirection = LL_USART_DIRECTION_TX_RX;
   USART_InitStruct.HardwareFlowControl = LL_USART_HWCONTROL_NONE;
   USART_InitStruct.OverSampling = LL_USART_OVERSAMPLING_16;
-  LL_USART_Init(USART2, &USART_InitStruct);
+  LL_USART_Init(USART2,&USART_InitStruct);
   LL_USART_SetTXFIFOThreshold(USART2, LL_USART_FIFOTHRESHOLD_1_8);
   LL_USART_SetRXFIFOThreshold(USART2, LL_USART_FIFOTHRESHOLD_1_8);
   LL_USART_DisableFIFO(USART2);
@@ -444,8 +444,6 @@ void StartTransfer(void)
   /* Enable DMA RX Interrupt */
   LL_USART_EnableDMAReq_RX(USART2);
 
-  /* Enable DMA TX Interrupt */
-
   /* Enable DMA Channel Rx */
   LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_2);
 
@@ -454,25 +452,15 @@ void StartTransfer(void)
 }
 
 
-void WaitAndCheckEndOfTransfer(void){
+void ExecuteTasksAndDisableChannel(void){
 	while(ubReceptionComplete != 1)
 	{
-		Task1(RxBuffer);
+		//Task1(RxBuffer);
 	}
 
+	Task1(RxBuffer);
 	LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_2);
 
-	//strcpy((char*)RxBuffer,(char*)RxRawData); // copy it to the other buffer
-//	if (CheckFullness(RxRawData))
-//	  {
-//	    /* Processing Error */
-//	    LED_Blinking(500);
-//	  }
-//	  else
-//	  {
-//	    /* Turn On Led if data are well received */
-//	    LED_On();
-//	  }
 }
 
 void DMA1_ReceiveComplete_Callback(void)
