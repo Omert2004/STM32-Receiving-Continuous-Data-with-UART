@@ -44,6 +44,10 @@
 ../Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_ll_usart.h:3073:26:LL_USART_IsActiveFlag_RTO	16	static
 ../Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_ll_usart.h:3193:26:LL_USART_IsActiveFlag_TEACK	16	static
 ../Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_ll_usart.h:3204:26:LL_USART_IsActiveFlag_REACK	16	static
+../Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_ll_usart.h:3278:22:LL_USART_ClearFlag_PE	16	static
+../Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_ll_usart.h:3289:22:LL_USART_ClearFlag_FE	16	static
+../Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_ll_usart.h:3300:22:LL_USART_ClearFlag_NE	16	static
+../Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_ll_usart.h:3311:22:LL_USART_ClearFlag_ORE	16	static
 ../Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_ll_usart.h:3394:22:LL_USART_ClearFlag_RTO	16	static
 ../Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_ll_usart.h:3537:22:LL_USART_EnableIT_RTO	32	static,ignoring_inline_asm
 ../Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_ll_usart.h:4116:22:LL_USART_EnableDMAReq_RX	32	static,ignoring_inline_asm
@@ -69,7 +73,7 @@
 ../Core/Src/main.c:477:6:UserButton_Callback	8	static
 ../Core/Src/main.c:483:6:ResetFlags	8	static
 ../Core/Src/main.c:495:6:USART_TransferError_Callback	8	static
-../Core/Src/main.c:506:6:USART2_IRQHandler	16	static
-../Core/Src/main.c:532:6:Task1	24	static
-../Core/Src/main.c:541:6:LightTask	32	static
-../Core/Src/main.c:556:6:Error_Handler	8	static
+../Core/Src/main.c:506:6:USART2_IRQHandler	24	static
+../Core/Src/main.c:550:6:Task1	24	static
+../Core/Src/main.c:559:6:LightTask	32	static
+../Core/Src/main.c:574:6:Error_Handler	8	static

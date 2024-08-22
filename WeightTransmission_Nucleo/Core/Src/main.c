@@ -505,6 +505,10 @@ void USART_TransferError_Callback(void)
 }
 void USART2_IRQHandler(void)
 {
+
+	uint32_t isrflags=READ_REG(USART2->ISR);
+	uint32_t errorflags=( isrflags & (uint32_t)(USART_ISR_PE | USART_ISR_FE | USART_ISR_ORE | USART_ISR_NE) );
+
   /* USER CODE BEGIN USART2_IRQn 0 */
 	if (LL_USART_IsActiveFlag_RTO(USART2)) //Check if Rx Timeou(RTO) flag is set.
 	    {
@@ -521,6 +525,20 @@ void USART2_IRQHandler(void)
 	      //Calls the interrupt then restarts DMA.
 	    }
 
+if( errorflags!=0 ){
+	if( (isrflags & USART_ISR_PE)!=0 ){
+		LL_USART_ClearFlag_PE(USART2);
+	}
+	if( (isrflags & USART_ISR_FE)!=0 ){
+		LL_USART_ClearFlag_FE(USART2);
+	}
+	if( (isrflags & USART_ISR_NE)!=0 ){
+		LL_USART_ClearFlag_NE(USART2);
+	}
+	if( (isrflags & USART_ISR_ORE)!=0 ){
+		LL_USART_ClearFlag_ORE(USART2);
+	}
+}
 //	if (LL_USART_IsActiveFlag_RXNE(USART2))
 //	{
 //		RxRawData[IndexRxRawData++] == LL_USART_ReceiveData8(USART2); //Store the received data in RxRawData
