@@ -32,7 +32,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define RX_RAWDATA_SIZE 300
-#define RX_BUFFER_SIZE 16
+#define RX_BUFFER_SIZE 17
 #define	PROCESSED_DATA_SIZE 4
 /* USER CODE END PD */
 
@@ -56,6 +56,25 @@ uint8_t IndexRxRawData = 0;
 __IO uint8_t ubReceptionComplete = 0;
 uint8_t DataUsed=0;
 int a;
+
+struct WeighingData{
+	uint8_t STX;
+	//Status
+	uint8_t STA;
+	uint8_t STB;
+	uint8_t STC;
+	//Indicated
+	uint32_t Indicated[6];
+	//Tare
+	uint32_t Tare[6];
+	//Empty
+	uint8_t CR;
+	uint8_t LF;
+	uint8_t CHK;
+
+};
+struct WeighingData mydata;
+uint8_t DecOfFirst3;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -74,6 +93,7 @@ void ExecuteTasksAndDisableChannel(void);
 void ResetFlags(void);
 void Task1(uint8_t *SmallBuffer);
 void LightTask(uint8_t *ProcessedData);
+void ConstructData(void);
 
 
 
@@ -506,8 +526,8 @@ void USART_TransferError_Callback(void)
 void USART2_IRQHandler(void)
 {
 
-	uint32_t isrflags=READ_REG(USART2->ISR);
-	uint32_t errorflags=( isrflags & (uint32_t)(USART_ISR_PE | USART_ISR_FE | USART_ISR_ORE | USART_ISR_NE) );
+	uint32_t isrflags=READ_REG(USART2->ISR); // Read ISR register
+	uint32_t errorflags=( isrflags & (uint32_t)(USART_ISR_PE | USART_ISR_FE | USART_ISR_ORE | USART_ISR_NE) ); // Read the error flags
 
   /* USER CODE BEGIN USART2_IRQn 0 */
 	if (LL_USART_IsActiveFlag_RTO(USART2)) //Check if Rx Timeou(RTO) flag is set.
@@ -523,21 +543,21 @@ void USART2_IRQHandler(void)
 			 memset(RxRawData, 0, sizeof(RxRawData)); // Clear the RxRawData to get new input starting from index 0.
 			 ubReceptionComplete = 1;
 	      //Calls the interrupt then restarts DMA.
-	    }
+			}
 
-if( errorflags!=0 ){
-	if( (isrflags & USART_ISR_PE)!=0 ){
-		LL_USART_ClearFlag_PE(USART2);
-	}
-	if( (isrflags & USART_ISR_FE)!=0 ){
-		LL_USART_ClearFlag_FE(USART2);
-	}
-	if( (isrflags & USART_ISR_NE)!=0 ){
-		LL_USART_ClearFlag_NE(USART2);
-	}
-	if( (isrflags & USART_ISR_ORE)!=0 ){
-		LL_USART_ClearFlag_ORE(USART2);
-	}
+	if( errorflags!=0 ){
+		if( (isrflags & USART_ISR_PE)!=0 ){
+			LL_USART_ClearFlag_PE(USART2);
+		}
+		if( (isrflags & USART_ISR_FE)!=0 ){
+			LL_USART_ClearFlag_FE(USART2);
+		}
+		if( (isrflags & USART_ISR_NE)!=0 ){
+			LL_USART_ClearFlag_NE(USART2);
+		}
+		if( (isrflags & USART_ISR_ORE)!=0 ){
+			LL_USART_ClearFlag_ORE(USART2);
+		}
 }
 //	if (LL_USART_IsActiveFlag_RXNE(USART2))
 //	{
@@ -552,10 +572,38 @@ void Task1(uint8_t *SmallBuffer){ //
 	for(int i=0; i<4;i++){ // Store the processed Data from RxBuffer
 		ProcessedData[i]= SmallBuffer[i+6];
 	}
+
+	mydata.STX=SmallBuffer[0]; //STX
+	mydata.STA=SmallBuffer[1]; //STA
+	mydata.STB=SmallBuffer[2]; //STB
+	mydata.STC=SmallBuffer[3]; //STC
+	for (int i = 4; i<15;i++){
+		if (i<10)
+		{	if(SmallBuffer[i]==' '){ // Check if there is space
+				mydata.Indicated[i-4]=0; // Replace space with decimal 0
+		}
+			else{
+				mydata.Indicated[i-4]=SmallBuffer[i]-'0';
+			}
+		}
+		else{
+			if(SmallBuffer[i]==' '){
+					mydata.Tare[i-9]=0;
+			}
+			else{
+				mydata.Tare[i-9]=SmallBuffer[i]-'0';
+				}
+		}
+	}
+
 	LightTask(ProcessedData);
 	memset(ProcessedData,0, sizeof(ProcessedData)); // REset the ProcessedDAta
 	DataUsed=1; //Raise Flag when the Task1 is done.
+
+	ConstructData();
+
 }
+
 void LightTask(uint8_t *ProcessedData){
 	int i, k = 0;
 	int ProcessedData_Size= sizeof(ProcessedData);
@@ -570,6 +618,51 @@ void LightTask(uint8_t *ProcessedData){
 		LED_Off();
 	}
 
+}
+
+uint8_t var;
+double b;
+void ConstructData(void)
+{
+	b=a;
+	//STA
+	uint8_t STA_Bitof_0=((mydata.STA >> 0) & 1);
+	uint8_t STA_Bitof_1=((mydata.STA >> 1) & 1);
+	uint8_t STA_Bitof_2=((mydata.STA >> 2) & 1);
+	DecOfFirst3 = (4*STA_Bitof_2)+(2* STA_Bitof_1)+(1*STA_Bitof_0);
+	var=STA_Bitof_0;
+
+	switch (DecOfFirst3){
+		case 0:
+			b*=100; // XXXX00
+
+		case 1:
+			b*=10; // XXXXX0
+
+		case 2:
+			b*=1; // XXXXXX
+
+		case 3:
+			b*=0.1; // XXXXX.X
+
+		case 4:
+			b*=0.01; // XXXX.XX
+
+		case 5:
+			b*=0.001; // XXX.XXX
+//		case 6:
+//			b*=0.0001; // XX.XXXX
+//		case 7:
+//			b*=0.00001; // X.XXXXX
+	}
+
+//	uint8_t STB_Bitof_1 = ((mydata.STB >> 1) & 1);
+//	if(STB_Bitof_1 == 0){ // Weight positive
+//		b*=1;
+//	}
+//	else{ // Weight Negative
+//		b=-b;
+//	}
 }
 void Error_Handler(void)
 {
