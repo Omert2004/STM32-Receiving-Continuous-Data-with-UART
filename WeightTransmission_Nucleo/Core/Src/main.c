@@ -298,8 +298,8 @@ static void MX_USART2_UART_Init(void)
   /* Enable DMA transfer complete/error interrupts  */
 //  LL_DMA_EnableIT_TC(DMA1, LL_DMA_CHANNEL_1);
 //  LL_DMA_EnableIT_TE(DMA1, LL_DMA_CHANNEL_1);
- LL_DMA_EnableIT_TC(DMA1, LL_DMA_CHANNEL_2);
- LL_DMA_EnableIT_TE(DMA1, LL_DMA_CHANNEL_2);
+  LL_DMA_EnableIT_TC(DMA1, LL_DMA_CHANNEL_2);
+  LL_DMA_EnableIT_TE(DMA1, LL_DMA_CHANNEL_2);
   /* USER CODE END USART2_Init 1 */
   USART_InitStruct.PrescalerValue = LL_USART_PRESCALER_DIV1;
   USART_InitStruct.BaudRate = 19200;
@@ -323,12 +323,12 @@ static void MX_USART2_UART_Init(void)
   LL_USART_EnableIT_RTO(USART2);
   /* USER CODE END WKUPType USART2 */
 
-  LL_USART_Enable(USART2);
+//  LL_USART_Enable(USART2);
 
   /* Polling USART2 initialisation */
-  while((!(LL_USART_IsActiveFlag_TEACK(USART2))) || (!(LL_USART_IsActiveFlag_REACK(USART2))))
-  {
-  }
+//  while((!(LL_USART_IsActiveFlag_TEACK(USART2))) || (!(LL_USART_IsActiveFlag_REACK(USART2))))
+//  {
+//  }
   /* USER CODE BEGIN USART2_Init 2 */
 
 }
@@ -430,12 +430,18 @@ void LED_Blinking(uint32_t Period)
 
 void WaitForUserButtonPress(void)
 {
+
   while (ubButtonPress == 0)
   {
+
     LL_GPIO_TogglePin(LED4_GPIO_Port, LED4_Pin);
     LL_mDelay(200);
   }
   /* Ensure that LED4 is turned Off */
+  LL_USART_Enable(USART2);
+  while((!(LL_USART_IsActiveFlag_TEACK(USART2))) || (!(LL_USART_IsActiveFlag_REACK(USART2))))
+  //  {
+  //  }
   LED_Off();
 }
 
@@ -471,7 +477,7 @@ void DMA1_ReceiveComplete_Callback(void)
 void UserButton_Callback(void)
 {
   /* Update User push-button variable : to be checked in waiting loop in main program */
-  ubButtonPress = 1;
+	ubButtonPress = 1;
 }
 
 void ResetFlags(void){
@@ -499,6 +505,10 @@ void USART_TransferError_Callback(void)
 }
 void USART2_IRQHandler(void)
 {
+
+	uint32_t isrflags=READ_REG(USART2->ISR);
+	uint32_t errorflags=( isrflags & (uint32_t)(USART_ISR_PE | USART_ISR_FE | USART_ISR_ORE | USART_ISR_NE) );
+
   /* USER CODE BEGIN USART2_IRQn 0 */
 	if (LL_USART_IsActiveFlag_RTO(USART2)) //Check if Rx Timeou(RTO) flag is set.
 	    {
@@ -515,6 +525,20 @@ void USART2_IRQHandler(void)
 	      //Calls the interrupt then restarts DMA.
 	    }
 
+if( errorflags!=0 ){
+	if( (isrflags & USART_ISR_PE)!=0 ){
+		LL_USART_ClearFlag_PE(USART2);
+	}
+	if( (isrflags & USART_ISR_FE)!=0 ){
+		LL_USART_ClearFlag_FE(USART2);
+	}
+	if( (isrflags & USART_ISR_NE)!=0 ){
+		LL_USART_ClearFlag_NE(USART2);
+	}
+	if( (isrflags & USART_ISR_ORE)!=0 ){
+		LL_USART_ClearFlag_ORE(USART2);
+	}
+}
 //	if (LL_USART_IsActiveFlag_RXNE(USART2))
 //	{
 //		RxRawData[IndexRxRawData++] == LL_USART_ReceiveData8(USART2); //Store the received data in RxRawData
