@@ -32,7 +32,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define RX_RAWDATA_SIZE 300
-#define RX_BUFFER_SIZE 17
+#define RX_BUFFER_SIZE 18
 #define	PROCESSED_DATA_SIZE 4
 /* USER CODE END PD */
 
@@ -45,16 +45,16 @@
 
 /* USER CODE BEGIN PV */
 __IO uint8_t ubButtonPress = 0;
-__IO uint8_t ubSend = 0;
+
 
 uint8_t RxRawData[RX_RAWDATA_SIZE];
 uint8_t RxBuffer[RX_BUFFER_SIZE];
 uint16_t ubNbDataToReceive = sizeof(RxRawData) - 1;
 uint8_t ProcessedData[PROCESSED_DATA_SIZE];
-uint8_t IndexRxRawData = 0;
+
 
 __IO uint8_t ubReceptionComplete = 0;
-uint8_t DataUsed=0;
+
 int a;
 
 struct WeighingData{
@@ -73,8 +73,15 @@ struct WeighingData{
 	uint8_t CHK;
 
 };
-struct WeighingData mydata;
+struct WeighingData MyData; //Created a struct called MyData
 uint8_t DecOfFirst3;
+
+uint8_t b0;
+uint8_t b1;
+uint8_t b2;
+double DecimalData;
+double SignedDecimalData;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -93,7 +100,9 @@ void ExecuteTasksAndDisableChannel(void);
 void ResetFlags(void);
 void Task1(uint8_t *SmallBuffer);
 void LightTask(uint8_t *ProcessedData);
+void LightTaskWithDouble(double ProcessedData);
 void ConstructData(void);
+void ConvertStructtoInteger(struct WeighingData *MyData);
 
 
 
@@ -343,12 +352,12 @@ static void MX_USART2_UART_Init(void)
   LL_USART_EnableIT_RTO(USART2);
   /* USER CODE END WKUPType USART2 */
 
-//  LL_USART_Enable(USART2);
+  LL_USART_Enable(USART2);
 
   /* Polling USART2 initialisation */
-//  while((!(LL_USART_IsActiveFlag_TEACK(USART2))) || (!(LL_USART_IsActiveFlag_REACK(USART2))))
-//  {
-//  }
+  while((!(LL_USART_IsActiveFlag_TEACK(USART2))) || (!(LL_USART_IsActiveFlag_REACK(USART2))))
+  {
+  }
   /* USER CODE BEGIN USART2_Init 2 */
 
 }
@@ -458,10 +467,10 @@ void WaitForUserButtonPress(void)
     LL_mDelay(200);
   }
   /* Ensure that LED4 is turned Off */
-  LL_USART_Enable(USART2);
-  while((!(LL_USART_IsActiveFlag_TEACK(USART2))) || (!(LL_USART_IsActiveFlag_REACK(USART2))))
-  //  {
-  //  }
+//  LL_USART_Enable(USART2);
+//  while((!(LL_USART_IsActiveFlag_TEACK(USART2))) || (!(LL_USART_IsActiveFlag_REACK(USART2))))
+//  //  {
+//  //  }
   LED_Off();
 }
 
@@ -481,7 +490,6 @@ void StartTransfer(void)
 void ExecuteTasksAndDisableChannel(void){
 	while(ubReceptionComplete != 1)
 	{
-		//Task1(RxBuffer);
 	}
 
 	Task1(RxBuffer);
@@ -534,12 +542,8 @@ void USART2_IRQHandler(void)
 	    {
 	        // Clear the Rx Timeout flag
 	        LL_USART_ClearFlag_RTO(USART2);
-//	     if ( DataUsed== 1){
-//	    	 memset(RxBuffer,0,sizeof(RxBuffer));
-//	    	 DataUsed=0;
-//	     }
+
 	    	 memcpy(RxBuffer, RxRawData,sizeof(RxBuffer)); // Keep the input with RxBuffer
-			 IndexRxRawData= 0; // Reset the RawData index
 			 memset(RxRawData, 0, sizeof(RxRawData)); // Clear the RxRawData to get new input starting from index 0.
 			 ubReceptionComplete = 1;
 	      //Calls the interrupt then restarts DMA.
@@ -558,13 +562,7 @@ void USART2_IRQHandler(void)
 		if( (isrflags & USART_ISR_ORE)!=0 ){
 			LL_USART_ClearFlag_ORE(USART2);
 		}
-}
-//	if (LL_USART_IsActiveFlag_RXNE(USART2))
-//	{
-//		RxRawData[IndexRxRawData++] == LL_USART_ReceiveData8(USART2); //Store the received data in RxRawData
-//
-//
-//	}
+	}
 }
 
 void Task1(uint8_t *SmallBuffer){ //
@@ -572,44 +570,100 @@ void Task1(uint8_t *SmallBuffer){ //
 	for(int i=0; i<4;i++){ // Store the processed Data from RxBuffer
 		ProcessedData[i]= SmallBuffer[i+6];
 	}
+	if(SmallBuffer[0] == '>'){
 
-	mydata.STX=SmallBuffer[0]; //STX
-	mydata.STA=SmallBuffer[1]; //STA
-	mydata.STB=SmallBuffer[2]; //STB
-	mydata.STC=SmallBuffer[3]; //STC
+	MyData.STX=SmallBuffer[0]; //STX
+	MyData.STA=SmallBuffer[1]; //STA
+	MyData.STB=SmallBuffer[2]; //STB
+	MyData.STC=SmallBuffer[3]; //STC
 	for (int i = 4; i<15;i++){
 		if (i<10)
 		{	if(SmallBuffer[i]==' '){ // Check if there is space
-				mydata.Indicated[i-4]=0; // Replace space with decimal 0
+				MyData.Indicated[i-4]=0; // Replace space with decimal 0
 		}
 			else{
-				mydata.Indicated[i-4]=SmallBuffer[i]-'0';
+				MyData.Indicated[i-4]=SmallBuffer[i]-'0'; //Fill the Indicated Part
 			}
 		}
-		else{
+		else{ //After i is equal to or bigger than 10, fill the Tare Part
 			if(SmallBuffer[i]==' '){
-					mydata.Tare[i-9]=0;
+				MyData.Tare[i-9]=0;
 			}
 			else{
-				mydata.Tare[i-9]=SmallBuffer[i]-'0';
+				MyData.Tare[i-9]=SmallBuffer[i]-'0'; //Fill the Tare Part
 				}
 		}
+
+	}
+	ConvertStructtoInteger(&MyData); //Convert Indicated Part to an integer number
+	ConstructData();  // Construct Indıcated number according to STA and STB
+	LightTaskWithDouble(DecimalData);
+	//LightTask(ProcessedData);
+	memset(ProcessedData,0, sizeof(ProcessedData)); // REset the ProcessedDAta
+	}
+}
+
+void ConvertStructtoInteger(struct WeighingData *MyData){
+	int i, k = 0;
+		for (i = 0; i < 6; i++){ // Convert the processed data to whole integer number
+			k = 10 * k +  MyData->Indicated[i]; // Turn the character into integer by substracting '0'
+		}
+		DecimalData=k;
+}
+
+
+void ConstructData(void)
+{
+	//STA
+	uint8_t STA_Bitof_0=((MyData.STA >> 7) & 1);
+	uint8_t STA_Bitof_1=((MyData.STA >> 6) & 1);
+	uint8_t STA_Bitof_2=((MyData.STA >> 5) & 1);
+	DecOfFirst3 = (4*STA_Bitof_0)+(2* STA_Bitof_1)+(1*STA_Bitof_2);
+	b0=STA_Bitof_0;
+	b1=STA_Bitof_1;
+	b2=STA_Bitof_2;
+
+	switch (DecOfFirst3){
+		case 0:
+			DecimalData*=100; // XXXX00
+			break;
+		case 1:
+			DecimalData*=10; // XXXXX0
+			break;
+		case 2:
+			DecimalData*=1; // XXXXXX
+			break;
+		case 3:
+			DecimalData*=0.1; // XXXXX.X
+			break;
+		case 4:
+			DecimalData*=0.01; // XXXX.XX
+			break;
+		case 5:
+			DecimalData*=0.001; // XXX.XXX
+			break;
+		case 6:
+			DecimalData*=0.0001; // XX.XXXX
+		case 7:
+			DecimalData*=0.00001; // X.XXXXX
+			break;
 	}
 
-	LightTask(ProcessedData);
-	memset(ProcessedData,0, sizeof(ProcessedData)); // REset the ProcessedDAta
-	DataUsed=1; //Raise Flag when the Task1 is done.
-
-	ConstructData();
-
+	uint8_t STB_Bitof_1 = ((MyData.STB >> 6) & 1);
+	if(STB_Bitof_1 == 0){ // Weight positive
+		SignedDecimalData=DecimalData;
+	}
+	else{ // Weight Negative
+		SignedDecimalData=-DecimalData;
+	}
 }
 
 void LightTask(uint8_t *ProcessedData){
 	int i, k = 0;
-	int ProcessedData_Size= sizeof(ProcessedData);
-	for (i = 0; i < ProcessedData_Size; i++){ // Convert the processed data to whole integer number
-		k = 10 * k + (ProcessedData[i] - '0'); // Turn the character into integer by substracting '0'
-	}
+		int ProcessedData_Size= sizeof(ProcessedData);
+		for (i = 0; i < ProcessedData_Size; i++){ // Convert the processed data to whole integer number
+			k = 10 * k + (ProcessedData[i] - '0'); // Turn the character into integer by substracting '0'
+		}
 	a=k;
 	if ( k > 1330 && k < 1340){ // Blink LED, if the proccessed integer is at between desired borders
 		LED_On();
@@ -617,53 +671,18 @@ void LightTask(uint8_t *ProcessedData){
 	else{
 		LED_Off();
 	}
-
 }
 
-uint8_t var;
-double b;
-void ConstructData(void)
-{
-	b=a;
-	//STA
-	uint8_t STA_Bitof_0=((mydata.STA >> 0) & 1);
-	uint8_t STA_Bitof_1=((mydata.STA >> 1) & 1);
-	uint8_t STA_Bitof_2=((mydata.STA >> 2) & 1);
-	DecOfFirst3 = (4*STA_Bitof_2)+(2* STA_Bitof_1)+(1*STA_Bitof_0);
-	var=STA_Bitof_0;
-
-	switch (DecOfFirst3){
-		case 0:
-			b*=100; // XXXX00
-
-		case 1:
-			b*=10; // XXXXX0
-
-		case 2:
-			b*=1; // XXXXXX
-
-		case 3:
-			b*=0.1; // XXXXX.X
-
-		case 4:
-			b*=0.01; // XXXX.XX
-
-		case 5:
-			b*=0.001; // XXX.XXX
-//		case 6:
-//			b*=0.0001; // XX.XXXX
-//		case 7:
-//			b*=0.00001; // X.XXXXX
-	}
-
-//	uint8_t STB_Bitof_1 = ((mydata.STB >> 1) & 1);
-//	if(STB_Bitof_1 == 0){ // Weight positive
-//		b*=1;
-//	}
-//	else{ // Weight Negative
-//		b=-b;
-//	}
+void LightTaskWithDouble(double ProcessedData){
+	if ( ProcessedData > 1.330 && ProcessedData < 1.340){ // Blink LED, if the proccessed integer is at between desired borders
+			LED_On();
+		}
+		else{
+			LED_Off();
+		}
 }
+
+
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
