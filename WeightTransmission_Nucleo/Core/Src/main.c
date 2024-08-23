@@ -88,7 +88,7 @@ double SignedDecimalData;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
-static void MX_USART2_UART_Init(void);
+static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
 void StartTransfer(void);
 void LED_On(void);
@@ -152,7 +152,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
-  MX_USART2_UART_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
   /*Wait for User push-button to start receive data*/
   WaitForUserButtonPress();
@@ -171,7 +171,7 @@ int main(void)
 	 // Start the recursion
 	/* Configure the DMA functional parameters for reception */
 	LL_DMA_ConfigAddresses(DMA1, LL_DMA_CHANNEL_2,
-							   LL_USART_DMA_GetRegAddr(USART2, LL_USART_DMA_REG_DATA_RECEIVE),
+							   LL_USART_DMA_GetRegAddr(USART1, LL_USART_DMA_REG_DATA_RECEIVE),
 							   (uint32_t)RxRawData,
 							   LL_DMA_GetDataTransferDirection(DMA1, LL_DMA_CHANNEL_2));
 	LL_DMA_SetDataLength(DMA1, LL_DMA_CHANNEL_2, ubNbDataToReceive);
@@ -233,7 +233,7 @@ void SystemClock_Config(void)
   * @param None
   * @retval None
   */
-static void MX_USART2_UART_Init(void)
+static void MX_USART1_UART_Init(void)
 {
 
 
@@ -245,34 +245,35 @@ static void MX_USART2_UART_Init(void)
 
   LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
 
+  LL_RCC_SetUSARTClockSource(LL_RCC_USART1_CLKSOURCE_PCLK1);
   /* Peripheral clock enable */
-  LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_USART2);
+  LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_USART1);
 
-  LL_IOP_GRP1_EnableClock(LL_IOP_GRP1_PERIPH_GPIOA);
+  LL_IOP_GRP1_EnableClock(LL_IOP_GRP1_PERIPH_GPIOC);
   /**USART2 GPIO Configuration
   PA2   ------> USART2_TX
   PA3   ------> USART2_RX
   */
-  GPIO_InitStruct.Pin = LL_GPIO_PIN_2;
+  GPIO_InitStruct.Pin = LL_GPIO_PIN_4;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
   GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_HIGH;
   GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_UP;
   GPIO_InitStruct.Alternate = LL_GPIO_AF_1;
-  LL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  LL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  GPIO_InitStruct.Pin = LL_GPIO_PIN_3;
+  GPIO_InitStruct.Pin = LL_GPIO_PIN_5;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
   GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_HIGH;
   GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_UP;
   GPIO_InitStruct.Alternate = LL_GPIO_AF_1;
-  LL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  LL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /* USART2 DMA Init */
 
   /* USART2_TX Init */
-  LL_DMA_SetPeriphRequest(DMA1, LL_DMA_CHANNEL_1, LL_DMAMUX_REQ_USART2_TX);
+  LL_DMA_SetPeriphRequest(DMA1, LL_DMA_CHANNEL_1, LL_DMAMUX_REQ_USART1_TX);
 
   LL_DMA_SetDataTransferDirection(DMA1, LL_DMA_CHANNEL_1, LL_DMA_DIRECTION_MEMORY_TO_PERIPH);
 
@@ -289,7 +290,7 @@ static void MX_USART2_UART_Init(void)
   LL_DMA_SetMemorySize(DMA1, LL_DMA_CHANNEL_1, LL_DMA_MDATAALIGN_BYTE);
 
   /* USART2_RX Init */
-  LL_DMA_SetPeriphRequest(DMA1, LL_DMA_CHANNEL_2, LL_DMAMUX_REQ_USART2_RX);
+  LL_DMA_SetPeriphRequest(DMA1, LL_DMA_CHANNEL_2, LL_DMAMUX_REQ_USART1_RX);
 
   LL_DMA_SetDataTransferDirection(DMA1, LL_DMA_CHANNEL_2, LL_DMA_DIRECTION_PERIPH_TO_MEMORY); //Peripheral to memory
 
@@ -306,8 +307,8 @@ static void MX_USART2_UART_Init(void)
   LL_DMA_SetMemorySize(DMA1, LL_DMA_CHANNEL_2, LL_DMA_MDATAALIGN_BYTE);
 
   /* USART2 interrupt Init */
-  NVIC_SetPriority(USART2_IRQn, 0);
-  NVIC_EnableIRQ(USART2_IRQn);
+  NVIC_SetPriority(USART1_IRQn, 0);
+  NVIC_EnableIRQ(USART1_IRQn);
 
   /* USER CODE BEGIN USART2_Init 1 */
   /* Configure the DMA functional parameters for transmission */
@@ -319,7 +320,7 @@ static void MX_USART2_UART_Init(void)
 
   /* Configure the DMA functional parameters for reception */
   LL_DMA_ConfigAddresses(DMA1, LL_DMA_CHANNEL_2,
-                         LL_USART_DMA_GetRegAddr(USART2, LL_USART_DMA_REG_DATA_RECEIVE),
+                         LL_USART_DMA_GetRegAddr(USART1, LL_USART_DMA_REG_DATA_RECEIVE),
                          (uint32_t)RxRawData,
                          LL_DMA_GetDataTransferDirection(DMA1, LL_DMA_CHANNEL_2));
   LL_DMA_SetDataLength(DMA1, LL_DMA_CHANNEL_2, ubNbDataToReceive);
@@ -338,24 +339,24 @@ static void MX_USART2_UART_Init(void)
   USART_InitStruct.TransferDirection = LL_USART_DIRECTION_TX_RX;
   USART_InitStruct.HardwareFlowControl = LL_USART_HWCONTROL_NONE;
   USART_InitStruct.OverSampling = LL_USART_OVERSAMPLING_16;
-  LL_USART_Init(USART2,&USART_InitStruct);
-  LL_USART_SetTXFIFOThreshold(USART2, LL_USART_FIFOTHRESHOLD_1_8);
-  LL_USART_SetRXFIFOThreshold(USART2, LL_USART_FIFOTHRESHOLD_1_8);
-  LL_USART_DisableFIFO(USART2);
-  LL_USART_ConfigAsyncMode(USART2);
+  LL_USART_Init(USART1,&USART_InitStruct);
+  LL_USART_SetTXFIFOThreshold(USART1, LL_USART_FIFOTHRESHOLD_1_8);
+  LL_USART_SetRXFIFOThreshold(USART1, LL_USART_FIFOTHRESHOLD_1_8);
+  LL_USART_DisableFIFO(USART1);
+  LL_USART_ConfigAsyncMode(USART1);
 
   /* USER CODE BEGIN WKUPType USART2 */
-  LL_USART_EnableRxTimeout(USART2);
-  LL_USART_SetRxTimeout(USART2, 960);
+  LL_USART_EnableRxTimeout(USART1);
+  LL_USART_SetRxTimeout(USART1, 20);
 
-  LL_USART_ClearFlag_RTO(USART2);
-  LL_USART_EnableIT_RTO(USART2);
+  LL_USART_ClearFlag_RTO(USART1);
+  LL_USART_EnableIT_RTO(USART1);
   /* USER CODE END WKUPType USART2 */
 
-  LL_USART_Enable(USART2);
+  LL_USART_Enable(USART1);
 
   /* Polling USART2 initialisation */
-  while((!(LL_USART_IsActiveFlag_TEACK(USART2))) || (!(LL_USART_IsActiveFlag_REACK(USART2))))
+  while((!(LL_USART_IsActiveFlag_TEACK(USART1))) || (!(LL_USART_IsActiveFlag_REACK(USART1))))
   {
   }
   /* USER CODE BEGIN USART2_Init 2 */
@@ -477,7 +478,7 @@ void WaitForUserButtonPress(void)
 void StartTransfer(void)
 {
   /* Enable DMA RX Interrupt */
-  LL_USART_EnableDMAReq_RX(USART2);
+  LL_USART_EnableDMAReq_RX(USART1);
 
   /* Enable DMA Channel Rx */
   LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_2);
@@ -531,17 +532,17 @@ void USART_TransferError_Callback(void)
   /* Set LED4 to Blinking mode to indicate error occurs */
   LED_Blinking(500);
 }
-void USART2_IRQHandler(void)
+void USART1_IRQHandler(void)
 {
 
-	uint32_t isrflags=READ_REG(USART2->ISR); // Read ISR register
+	uint32_t isrflags=READ_REG(USART1->ISR); // Read ISR register
 	uint32_t errorflags=( isrflags & (uint32_t)(USART_ISR_PE | USART_ISR_FE | USART_ISR_ORE | USART_ISR_NE) ); // Read the error flags
 
   /* USER CODE BEGIN USART2_IRQn 0 */
-	if (LL_USART_IsActiveFlag_RTO(USART2)) //Check if Rx Timeou(RTO) flag is set.
+	if (LL_USART_IsActiveFlag_RTO(USART1)) //Check if Rx Timeou(RTO) flag is set.
 	    {
 	        // Clear the Rx Timeout flag
-	        LL_USART_ClearFlag_RTO(USART2);
+	        LL_USART_ClearFlag_RTO(USART1);
 
 	    	 memcpy(RxBuffer, RxRawData,sizeof(RxBuffer)); // Keep the input with RxBuffer
 			 memset(RxRawData, 0, sizeof(RxRawData)); // Clear the RxRawData to get new input starting from index 0.
@@ -551,16 +552,16 @@ void USART2_IRQHandler(void)
 
 	if( errorflags!=0 ){
 		if( (isrflags & USART_ISR_PE)!=0 ){
-			LL_USART_ClearFlag_PE(USART2);
+			LL_USART_ClearFlag_PE(USART1);
 		}
 		if( (isrflags & USART_ISR_FE)!=0 ){
-			LL_USART_ClearFlag_FE(USART2);
+			LL_USART_ClearFlag_FE(USART1);
 		}
 		if( (isrflags & USART_ISR_NE)!=0 ){
-			LL_USART_ClearFlag_NE(USART2);
+			LL_USART_ClearFlag_NE(USART1);
 		}
 		if( (isrflags & USART_ISR_ORE)!=0 ){
-			LL_USART_ClearFlag_ORE(USART2);
+			LL_USART_ClearFlag_ORE(USART1);
 		}
 	}
 }
@@ -570,7 +571,7 @@ void Task1(uint8_t *SmallBuffer){ //
 	for(int i=0; i<4;i++){ // Store the processed Data from RxBuffer
 		ProcessedData[i]= SmallBuffer[i+6];
 	}
-	if(SmallBuffer[0] == '>'){
+	if(SmallBuffer[0] == 2){
 
 	MyData.STX=SmallBuffer[0]; //STX
 	MyData.STA=SmallBuffer[1]; //STA
@@ -615,10 +616,10 @@ void ConvertStructtoInteger(struct WeighingData *MyData){
 void ConstructData(void)
 {
 	//STA
-	uint8_t STA_Bitof_0=((MyData.STA >> 7) & 1);
-	uint8_t STA_Bitof_1=((MyData.STA >> 6) & 1);
-	uint8_t STA_Bitof_2=((MyData.STA >> 5) & 1);
-	DecOfFirst3 = (4*STA_Bitof_0)+(2* STA_Bitof_1)+(1*STA_Bitof_2);
+	uint8_t STA_Bitof_0=((MyData.STA >> 0) & 1);
+	uint8_t STA_Bitof_1=((MyData.STA >> 1) & 1);
+	uint8_t STA_Bitof_2=((MyData.STA >> 2) & 1);
+	DecOfFirst3 = (1*STA_Bitof_0)+(2* STA_Bitof_1)+(4*STA_Bitof_2);
 	b0=STA_Bitof_0;
 	b1=STA_Bitof_1;
 	b2=STA_Bitof_2;
